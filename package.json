@@ -1,0 +1,32 @@
+{
+  "name": "wanchain-sc-sdk",
+  "version": "1.0.0",
+  "description": "SDK for deploying smart contracts on Wanchain",
+  "main": "index.js",
+  "author": "wanchain-dev <techsupport@wanchain.org>",
+  "license": "Apache-2.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "wanchain",
+    "contract",
+    "deploy"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wanchain/wanchain-sc-sdk.git"
+  },
+  "homepage": "https://github.com/wanchain/wanchain-sc-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/wanchain/wanchain-sc-sdk/issues"
+  },
+  "dependencies": {
+    "solc": "^0.4.24",
+    "web3": "^1.2.1",
+    "wanchain-util": "^1.2.0"
+  },
+  "directories": {
+    "example": "example"
+  }
+}
