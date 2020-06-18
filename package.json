@@ -1,6 +1,6 @@
 {
   "name": "wanchain-sc-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "SDK for deploying smart contracts on Wanchain",
   "main": "index.js",
   "author": "wanchain-dev <techsupport@wanchain.org>",
