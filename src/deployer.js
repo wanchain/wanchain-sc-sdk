@@ -6,22 +6,34 @@ const linker = require('solc/linker');
 const cfg = require('./config');
 const tool = require('./tool');
 const Web3 = require('web3');
-const wanUtil = require('wanchain-util');
-const Tx = wanUtil.wanchainTx;
 const ethUtil = require('ethereumjs-util');
+const ethTx = require('ethereumjs-tx');
+const wanUtil = require('wanchain-util');
+const flattener = require('truffle-flattener');
+const wanTx = wanUtil.wanchainTx;
 
-let chainId, privateKey, deployerAddress, web3;
+const chainDict = { WAN: "WAN", ETH: "ETH" };
+
+let chainId, privateKey, deployerAddress, web3, chainType;
 let contracts = new Map(); // Map(contractFileName => contractContent)
 let compiled = new Map();  // Map(contractName => compiledData)
 
-const config = (userCfg) => {
+const config = async (userCfg) => {
   // update config
   Object.assign(cfg, userCfg);
 
   // check required 
-  if (['mainnet', 'testnet'].indexOf(cfg.network) < 0) {
+  // wan mainnet and testnet, eth mainnet and testnet
+  if (['mainnet', 'testnet'].indexOf(cfg.network) >= 0) {
+    chainType = chainDict.WAN;
+  } else if (['ethereum', 'rinkeby', 'ropsten', 'kovan'].indexOf(cfg.network) >= 0) {
+    chainType = chainDict.ETH;
+  } else {
     throw new Error("network can only be mainnet or testnet");
   }
+  // if (['mainnet', 'testnet', 'ethereum', 'rinkeby'].indexOf(cfg.network) < 0) {
+  //   throw new Error("network can only be mainnet or testnet");
+  // }
   if (!cfg.wanNodeURL) {
     throw new Error("wanNodeURL is required");
   }
@@ -33,11 +45,22 @@ const config = (userCfg) => {
   }
 
   // init deployer
-  init();
+  await init();
 }
 
-const init = () => {
-  chainId = (cfg.network == "mainnet") ? '0x01' : '0x03';
+const init = async () => {
+  if (cfg.network == "mainnet" || cfg.network == "ethereum") {
+    chainId = '0x01';
+  } else if (cfg.network == "testnet" || cfg.network == "ropsten") {
+    chainId = '0x03';
+  } else if (cfg.network == "rinkeby") {
+    chainId = '0x04';
+  } else if (cfg.network == "kovan") {
+    chainId = '0x2a';
+  } else {
+    throw new Error(`Not support ${cfg.network}`);
+  }
+  // chainId = (cfg.network == "mainnet") ? '0x01' : '0x03';
   privateKey = Buffer.from(cfg.privateKey, 'hex');
   deployerAddress = '0x' + ethUtil.privateToAddress(privateKey).toString('hex').toLowerCase();
   console.log("\r\nStart deployment on %s...", cfg.network);
@@ -56,21 +79,47 @@ const init = () => {
   tool.mkdir(cfg.outputDir);
 
   // load contract file
-  loadContract(cfg.contractDir);
+  await loadContract(cfg.contractDir);
 }
 
-const loadContract = (dir) => {
+String.prototype.replaceAll = function (FindText, RepText) {
+  regExp = new RegExp(FindText, "g");
+  return this.replace(regExp, RepText);
+}
+
+const loadContract = async (dir) => {
   let files = fs.readdirSync(dir);
-  files.forEach(function(file) {
+
+  for (let i=0; i<files.length; i++) {
+    let file = files[i];
     let p = path.join(dir, file);
     if (fs.statSync(p).isDirectory()) {
-      loadContract(p);
+      await loadContract(p);
     } else {
       if (file.indexOf('.sol') > 0) {
-        contracts[path.basename(p)] = {path: p, content: fs.readFileSync(p, 'utf-8')};
+        console.log(p);
+        let flatContent;
+        try {
+          flatContent = await flattener([p]);
+          console.log('flatten: ', file);
+        } catch (err) {
+          console.log('err', err);
+        }
+
+        if (flatContent.indexOf('pragma experimental ABIEncoderV2') !== -1) {
+          console.log('******* file use pragma experimental ABIEncoderV2 ********');
+          flatContent = flatContent.replaceAll('pragma experimental ABIEncoderV2', '// pragma experimental ABIEncoderV2');
+          flatContent = 'pragma experimental ABIEncoderV2; \n' + flatContent;
+        }
+        
+        contracts[path.basename(p)] = {
+          path: p, 
+          // content: fs.readFileSync(p, 'utf-8')
+          content: flatContent
+        };
       }
     }
-  });
+  }
 }
 
 // fileName is needed if it is not consistent with contractName
@@ -108,10 +157,31 @@ function getImport(filePath) {
   }
 }
 
+// const link = (contract, ...libs) => {
+//   let data = compiled.get(contract);
+//   if (!data) {
+//     compile(contract);
+//     data = compiled.get(contract);
+//   }
+//   let refs = linker.findLinkReferences(data.bytecode);
+//   console.log('link', refs, data.bytecode.length);
+//   data.bytecode = linker.linkBytecode(data.bytecode, getLibAddress(contract, refs, libs));
+//   console.log('link after', data.bytecode.length);
+
+// }
+
 const link = (contract, ...libs) => {
   let data = compiled.get(contract);
+  if (!data) {
+    compile(contract);
+    data = compiled.get(contract);
+  }
+  compile(libs[0], contract+'.sol');
   let refs = linker.findLinkReferences(data.bytecode);
+  // console.log('link', refs, data.bytecode);
   data.bytecode = linker.linkBytecode(data.bytecode, getLibAddress(contract, refs, libs));
+  // console.log('link after', data.bytecode.length);
+
 }
 
 function getLibAddress(contract, refs, libs) {
@@ -135,6 +205,7 @@ function getLibAddress(contract, refs, libs) {
       })      
     }
   }
+  console.log('getLibAddress', result);
   return result;
 }
 
@@ -146,6 +217,7 @@ const deploy = async (name, ...args) => {
   }
   let txData = getDeployContractTxData(data, args);
   let receipt = await sendTx('', txData);
+
   if (receipt && receipt.status) {
     let address = receipt.contractAddress;
     let exist = tool.setAddress(cfg.outputDir, name, address);
@@ -176,18 +248,26 @@ const sendTx = async (contractAddr, data, wanValue = 0) => {
   value = new web3.utils.BN(value);
   value = '0x' + value.toString(16);
 
-  let rawTx = {
-      chainId: chainId,
-      Txtype: 0x01,
-      to: contractAddr,
-      nonce: await getNonce(deployerAddress),
-      gasPrice: cfg.gasPrice,
-      gasLimit: cfg.gasLimit,      
-      value: value,
-      data: data
-  };
   // console.log("serializeTx: %O", rawTx);
-  let tx = new Tx(rawTx);
+  let rawTx = {
+    chainId: chainId,
+    Txtype: 0x01,
+    to: contractAddr,
+    nonce: await getNonce(deployerAddress),
+    gasPrice: cfg.gasPrice,
+    gasLimit: cfg.gasLimit,      
+    value: value,
+    data: data
+  };
+
+  let tx
+  if (chainType === chainDict.ETH) {
+    tx = new ethTx(rawTx);
+  } else {
+    tx = new wanTx(rawTx);
+  }
+  // console.log("tx", JSON.stringify(tx, null, 4));
+  // let tx = new wanTx(rawTx);
   tx.sign(privateKey);
 
   try {
@@ -223,6 +303,15 @@ const deployed = (name, address = null) => {
   return contract;
 }
 
+const at = (name, address) => {
+  if (!address) {
+    throw new Error(`invalid address ${address}`);
+  }
+  return deployed(name, address);
+}
+
+
+
 const getNonce = async (address) => {
   return await web3.eth.getTransactionCount(address, 'pending');
 }
@@ -233,5 +322,6 @@ module.exports = {
   link,
   deploy,
   sendTx,
-  deployed
+  deployed,
+  at
 }
