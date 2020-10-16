@@ -34,8 +34,8 @@ const config = async (userCfg) => {
   // if (['mainnet', 'testnet', 'ethereum', 'rinkeby'].indexOf(cfg.network) < 0) {
   //   throw new Error("network can only be mainnet or testnet");
   // }
-  if (!cfg.wanNodeURL) {
-    throw new Error("wanNodeURL is required");
+  if (!cfg.nodeURL) {
+    throw new Error("nodeURL is required");
   }
   if ((!cfg.privateKey) || cfg.privateKey.length != 64) {
     throw new Error("invalid private key");
@@ -66,10 +66,10 @@ const init = async () => {
   console.log("\r\nStart deployment on %s...", cfg.network);
 
   // init web3
-  if (cfg.wanNodeURL.indexOf('http:') == 0) {
-    web3 = new Web3(new Web3.providers.HttpProvider(cfg.wanNodeURL));
-  } else if (cfg.wanNodeURL.indexOf('wss:') == 0) {
-    web3 = new Web3(new Web3.providers.WebsocketProvider(cfg.wanNodeURL));
+  if (cfg.nodeURL.indexOf('http:') == 0) {
+    web3 = new Web3(new Web3.providers.HttpProvider(cfg.nodeURL));
+  } else if (cfg.nodeURL.indexOf('wss:') == 0) {
+    web3 = new Web3(new Web3.providers.WebsocketProvider(cfg.nodeURL));
   } else {
     throw new Error("invalid protocol, can only be http or wss");
   }
