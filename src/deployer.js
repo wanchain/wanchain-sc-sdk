@@ -251,7 +251,6 @@ const sendTx = async (contractAddr, data, wanValue = 0) => {
   // console.log("serializeTx: %O", rawTx);
   let rawTx = {
     chainId: chainId,
-    Txtype: 0x01,
     to: contractAddr,
     nonce: await getNonce(deployerAddress),
     gasPrice: cfg.gasPrice,
@@ -264,6 +263,7 @@ const sendTx = async (contractAddr, data, wanValue = 0) => {
   if (chainType === chainDict.ETH) {
     tx = new ethTx(rawTx);
   } else {
+    rawTx.Txtype = 0x01;
     tx = new wanTx(rawTx);
   }
   // console.log("tx", JSON.stringify(tx, null, 4));
