@@ -16,7 +16,7 @@ Before deploying smart contracts, some config items are required.
 
 Choose to deploy on "mainnet" or "testnet", default is mainnet.
 
-<li>wanNodeURL</li>
+<li>nodeURL</li>
 
 Wanchain node for web3 to connect and send transactions, http and wss connections are supported, default is iWan.
 

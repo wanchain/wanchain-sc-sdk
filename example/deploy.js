@@ -3,7 +3,7 @@ const deployer = require('../index');
 
 let cfg = {
   network: 'testnet', // 'mainnet' or 'testnet'
-  wanNodeURL: 'http://gwan-testnet.wandevs.org:36891',
+  nodeURL: 'http://gwan-testnet.wandevs.org:36891',
   privateKey: 'your-private-key',
   contractDir: path.join(path.dirname(__filename), 'contracts'),
   outputDir: '',
