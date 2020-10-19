@@ -18,6 +18,13 @@ let chainId, privateKey, deployerAddress, web3, chainType;
 let contracts = new Map(); // Map(contractFileName => contractContent)
 let compiled = new Map();  // Map(contractName => compiledData)
 
+function getAddressString(privateKey) {
+  if (!Buffer.isBuffer(privateKey)) {
+    privateKey = Buffer.from(privateKey, "hex")
+  }
+  return ethUtil.bufferToHex(ethUtil.privateToAddress(privateKey));
+};
+
 const config = async (userCfg) => {
   // update config
   Object.assign(cfg, userCfg);
@@ -62,7 +69,7 @@ const init = async () => {
   }
   // chainId = (cfg.network == "mainnet") ? '0x01' : '0x03';
   privateKey = Buffer.from(cfg.privateKey, 'hex');
-  deployerAddress = '0x' + ethUtil.privateToAddress(privateKey).toString('hex').toLowerCase();
+  deployerAddress = getAddressString(privateKey);
   console.log("\r\nStart deployment on %s...", cfg.network);
 
   // init web3
@@ -97,11 +104,9 @@ const loadContract = async (dir) => {
       await loadContract(p);
     } else {
       if (file.indexOf('.sol') > 0) {
-        console.log(p);
         let flatContent;
         try {
           flatContent = await flattener([p]);
-          console.log('flatten: ', file);
         } catch (err) {
           console.log('err', err);
         }
@@ -205,7 +210,6 @@ function getLibAddress(contract, refs, libs) {
       })      
     }
   }
-  console.log('getLibAddress', result);
   return result;
 }
 
@@ -239,25 +243,40 @@ const getDeployContractTxData = (data, args = []) => {
   return contract.deploy(options).encodeABI();
 }
 
-const sendTx = async (contractAddr, data, wanValue = 0) => {
+const sendTx = async (contractAddr, data, options) => {
+  options = Object.assign({}, {value:0, privateKey: null}, options);
+  // console.log("sendTx, options", options);
+
   if (0 != data.indexOf('0x')){
     data = '0x' + data;
   }
 
-  let value = web3.utils.toWei(wanValue.toString(), 'ether');
+  let currPrivateKey;
+  let currDeployerAddress;
+  if (options.privateKey && options.privateKey.toLowerCase() !== cfg.privateKey.toLowerCase()) {
+
+    currPrivateKey = Buffer.from(options.privateKey, 'hex');
+    currDeployerAddress = getAddressString(options.privateKey);
+    // currDeployerAddress = '0x' + ethUtil.privateToAddress(options.privateKey).toString('hex').toLowerCase();
+  } else {
+    currPrivateKey = privateKey;
+    currDeployerAddress = deployerAddress;
+  }
+
+  let value = web3.utils.toWei(options.value.toString(), 'ether');
   value = new web3.utils.BN(value);
   value = '0x' + value.toString(16);
 
-  // console.log("serializeTx: %O", rawTx);
   let rawTx = {
     chainId: chainId,
     to: contractAddr,
-    nonce: await getNonce(deployerAddress),
+    nonce: await getNonce(currDeployerAddress),
     gasPrice: cfg.gasPrice,
     gasLimit: cfg.gasLimit,      
     value: value,
     data: data
   };
+  // console.log("serializeTx: %O", rawTx);
 
   let tx
   if (chainType === chainDict.ETH) {
@@ -268,7 +287,8 @@ const sendTx = async (contractAddr, data, wanValue = 0) => {
   }
   // console.log("tx", JSON.stringify(tx, null, 4));
   // let tx = new wanTx(rawTx);
-  tx.sign(privateKey);
+  tx.sign(currPrivateKey);
+  // console.log("signedTx: %O", tx);
 
   try {
     let receipt = await web3.eth.sendSignedTransaction('0x' + tx.serialize().toString('hex'));
@@ -317,6 +337,7 @@ const getNonce = async (address) => {
 }
 
 module.exports = {
+  getAddressString,
   config,
   compile,
   link,
