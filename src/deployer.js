@@ -228,6 +228,7 @@ const deploy = async (name, ...args) => {
     tool.showDeployInfo(name, receipt, exist);
     let contract = new web3.eth.Contract(JSON.parse(data.interface), address);
     contract.address = contract._address;
+    contract.abi = contract._jsonInterface;
     return contract;
   } else {
     throw new Error("failed to deploy contract " + name);
@@ -320,6 +321,7 @@ const deployed = (name, address = null) => {
   let data = compile(name);
   let contract = new web3.eth.Contract(JSON.parse(data.interface), address);
   contract.address = address;
+  contract.abi = contract._jsonInterface;
   return contract;
 }
 
