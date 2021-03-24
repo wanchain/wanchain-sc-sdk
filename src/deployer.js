@@ -12,7 +12,7 @@ const wanUtil = require('wanchain-util');
 const flattener = require('truffle-flattener');
 const wanTx = wanUtil.wanchainTx;
 
-const chainDict = { WAN: "WAN", ETH: "ETH" };
+const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC" };
 
 let chainId, privateKey, deployerAddress, web3, chainType;
 let contracts = new Map(); // Map(contractFileName => contractContent)
@@ -35,6 +35,8 @@ const config = async (userCfg) => {
     chainType = chainDict.WAN;
   } else if (['ethereum', 'rinkeby', 'ropsten', 'kovan'].indexOf(cfg.network) >= 0) {
     chainType = chainDict.ETH;
+  } else if (['bscMainnet', 'bscTestnet'].indexOf(cfg.network) >= 0) {
+    chainType = chainDict.BSC;
   } else {
     throw new Error("network can only be mainnet or testnet");
   }
@@ -64,6 +66,8 @@ const init = async () => {
     chainId = '0x04';
   } else if (cfg.network == "kovan") {
     chainId = '0x2a';
+  } else if (cfg.network == "bscTestnet") {
+    chainId = '0x61';
   } else {
     throw new Error(`Not support ${cfg.network}`);
   }
@@ -73,7 +77,9 @@ const init = async () => {
   console.log("\r\nStart deployment on %s...", cfg.network);
 
   // init web3
-  if (cfg.nodeURL.indexOf('http:') == 0) {
+  if (cfg.nodeURL.indexOf('https:') == 0) {
+    web3 = new Web3(cfg.nodeURL);
+  } else if (cfg.nodeURL.indexOf('http:') == 0) {
     web3 = new Web3(new Web3.providers.HttpProvider(cfg.nodeURL));
   } else if (cfg.nodeURL.indexOf('wss:') == 0) {
     web3 = new Web3(new Web3.providers.WebsocketProvider(cfg.nodeURL));
@@ -280,11 +286,11 @@ const sendTx = async (contractAddr, data, options) => {
   // console.log("serializeTx: %O", rawTx);
 
   let tx
-  if (chainType === chainDict.ETH) {
-    tx = new ethTx(rawTx);
-  } else {
+  if (chainType === chainDict.WAN) {
     rawTx.Txtype = 0x01;
     tx = new wanTx(rawTx);
+  } else {
+    tx = new ethTx(rawTx);
   }
   // console.log("tx", JSON.stringify(tx, null, 4));
   // let tx = new wanTx(rawTx);
