@@ -68,6 +68,8 @@ const init = async () => {
     chainId = '0x2a';
   } else if (cfg.network == "bscTestnet") {
     chainId = '0x61';
+  } else if (cfg.network == "bscMainnet") {
+    chainId = '0x38';
   } else {
     throw new Error(`Not support ${cfg.network}`);
   }
