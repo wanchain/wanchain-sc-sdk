@@ -78,9 +78,9 @@ const init = async () => {
     chainId = '0xa869';
   } else if (cfg.network == "avalancheMainnet") {
     chainId = '0xa86a';
-  } else if (cfg.network == "avalancheTestnet") {
+  } else if (cfg.network == "moonbeamTestnet") {
     chainId = '0x507';
-  } else if (cfg.network == "avalancheMainnet") {
+  } else if (cfg.network == "moonbeamMainnet") {
     chainId = '0x504';
   } else {
     throw new Error(`Not support ${cfg.network}`);
