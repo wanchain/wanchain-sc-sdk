@@ -12,7 +12,7 @@ const wanUtil = require('wanchain-util');
 const flattener = require('truffle-flattener');
 const wanTx = wanUtil.wanchainTx;
 
-const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC" };
+const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM" };
 
 let chainId, privateKey, deployerAddress, web3, chainType;
 let contracts = new Map(); // Map(contractFileName => contractContent)
@@ -37,6 +37,10 @@ const config = async (userCfg) => {
     chainType = chainDict.ETH;
   } else if (['bscMainnet', 'bscTestnet'].indexOf(cfg.network) >= 0) {
     chainType = chainDict.BSC;
+  } else if (['avalancheMainnet', 'avalancheTestnet'].indexOf(cfg.network) >= 0) {
+    chainType = chainDict.AVAX;
+  } else if (['moonbeamMainnet', 'moonbeamTestnet'].indexOf(cfg.network) >= 0) {
+    chainType = chainDict.MOONBEAM;
   } else {
     throw new Error("network can only be mainnet or testnet");
   }
@@ -70,6 +74,14 @@ const init = async () => {
     chainId = '0x61';
   } else if (cfg.network == "bscMainnet") {
     chainId = '0x38';
+  } else if (cfg.network == "avalancheTestnet") {
+    chainId = '0xa869';
+  } else if (cfg.network == "avalancheMainnet") {
+    chainId = '0xa86a';
+  } else if (cfg.network == "avalancheTestnet") {
+    chainId = '0x507';
+  } else if (cfg.network == "avalancheMainnet") {
+    chainId = '0x504';
   } else {
     throw new Error(`Not support ${cfg.network}`);
   }
