@@ -12,7 +12,7 @@ const wanUtil = require('wanchain-util');
 const flattener = require('truffle-flattener');
 const wanTx = wanUtil.wanchainTx;
 
-const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC" };
+const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA" };
 
 let chainId, privateKey, deployerAddress, web3, chainType;
 let contracts = new Map(); // Map(contractFileName => contractContent)
@@ -43,6 +43,8 @@ const config = async (userCfg) => {
     chainType = chainDict.MOONBEAM;
   } else if (['maticMainnet', 'maticTestnet'].indexOf(cfg.network) >= 0) {
     chainType = chainDict.MATIC;
+  } else if (['adaMainnet', 'adaTestnet'].indexOf(cfg.network) >= 0) {
+    chainType = chainDict.ADA;
   } else {
     throw new Error("network can only be mainnet or testnet");
   }
@@ -88,6 +90,10 @@ const init = async () => {
     chainId = '0x13881';
   } else if (cfg.network == "maticMainnet") {
     chainId = '0x89';
+  } else if (cfg.network == "adaMainnet") {
+    chainId = '0x67';
+  } else if (cfg.network == "adaTestnet") {
+    chainId = '0x67';
   } else {
     throw new Error(`Not support ${cfg.network}`);
   }
