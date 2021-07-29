@@ -12,7 +12,7 @@ const wanUtil = require('wanchain-util');
 const flattener = require('truffle-flattener');
 const wanTx = wanUtil.wanchainTx;
 
-const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA" };
+const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA" ,"ARB":"ARB"};
 
 let chainId, privateKey, deployerAddress, web3, chainType;
 let contracts = new Map(); // Map(contractFileName => contractContent)
@@ -44,7 +44,9 @@ const config = async (userCfg) => {
   } else if (['maticMainnet', 'maticTestnet'].indexOf(cfg.network) >= 0) {
     chainType = chainDict.MATIC;
   } else if (['adaMainnet', 'adaTestnet'].indexOf(cfg.network) >= 0) {
-    chainType = chainDict.ADA;
+      chainType = chainDict.ADA;
+  }else if (['arbMainnet', 'arbTestnet'].indexOf(cfg.network) >= 0) {
+      chainType = chainDict.ARB;
   } else {
     throw new Error("network can only be mainnet or testnet");
   }
@@ -93,8 +95,12 @@ const init = async () => {
   } else if (cfg.network == "adaMainnet") {
     chainId = '0x67';
   } else if (cfg.network == "adaTestnet") {
-    chainId = '0x67';
-  } else {
+      chainId = '0x67';
+  }else if (cfg.network == "arbTestnet") {
+          chainId = '0x66eeb';
+  }else if(cfg.network == "arbMainnet"){
+      chainId = '0x67'; // todo update
+  }else {
     throw new Error(`Not support ${cfg.network}`);
   }
   // chainId = (cfg.network == "mainnet") ? '0x01' : '0x03';
