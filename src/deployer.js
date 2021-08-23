@@ -370,25 +370,26 @@ const sendTx = async (contractAddr, data, options) => {
 }
 
 const deployed = (name, address = null) => {
-  // check address
-  let exist = tool.getAddress(cfg.outputDir, name);
-  if (address) {
-    if (!exist) { // do not overwrite exist
-      tool.setAddress(cfg.outputDir, name, address);
-    }
-  } else {
-    if (exist) {
-      address = exist;
+    // check address
+    let exist = tool.getAddress(cfg.outputDir, name);
+    if (address) {
+        if (!exist) { // do not overwrite exist
+            tool.setAddress(cfg.outputDir, name, address);
+        }
     } else {
-      throw new Error(name + " is not deployed");
+        if (exist) {
+            address = exist;
+        } else {
+            throw new Error(name + " is not deployed");
+        }
     }
-  }
-  // check path
-  let data = compile(name);
-  let contract = new web3.eth.Contract(JSON.parse(data.interface), address);
-  contract.address = address;
-  contract.abi = contract._jsonInterface;
-  return contract;
+    // check path
+    let data = compile(name);
+
+    let contract = new web3.eth.Contract(data.abi, address);
+    contract.address = address;
+    contract.abi = contract._jsonInterface;
+    return contract;
 }
 
 const at = (name, address) => {
