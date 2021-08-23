@@ -155,13 +155,20 @@ const loadContract = async (dir) => {
           console.log('err', err);
         }
 
-        if (flatContent.indexOf('pragma experimental ABIEncoderV2') !== -1) {
-          console.log('******* file use pragma experimental ABIEncoderV2 ********');
-          flatContent = flatContent.replaceAll('pragma experimental ABIEncoderV2', '// pragma experimental ABIEncoderV2');
-          flatContent = 'pragma experimental ABIEncoderV2; \n' + flatContent;
-        }
-        
-        contracts[path.basename(p)] = {
+          if (flatContent.indexOf('pragma experimental ABIEncoderV2') !== -1) {
+              console.log('******* file use pragma experimental ABIEncoderV2 ********');
+              flatContent = flatContent.replaceAll('pragma experimental ABIEncoderV2', '// pragma experimental ABIEncoderV2');
+              flatContent = 'pragma experimental ABIEncoderV2; \n' + flatContent;
+          }
+
+          if (flatContent.indexOf('// SPDX-License-Identifier: MIT') !== -1) {
+              console.log('***********===Jacob file use // SPDX-License-Identifier: MIT ********');
+              flatContent = flatContent.replaceAll('// SPDX-License-Identifier: MIT', '');
+              flatContent = '// SPDX-License-Identifier: MIT \n' + flatContent;
+          }
+
+
+          contracts[path.basename(p)] = {
           path: p, 
           // content: fs.readFileSync(p, 'utf-8')
           content: flatContent
@@ -173,27 +180,41 @@ const loadContract = async (dir) => {
 
 // fileName is needed if it is not consistent with contractName
 const compile = (contractName, fileName = null) => {
-  let input = {};
-  if (fileName) {
-    if (fileName.substr(-4).toLowerCase() != '.sol') {
-      throw new Error("invalid contract filename " + fileName);
-    }
-  } else {
-    fileName = contractName + '.sol';
-  }
+    let input = {
+        language: 'Solidity',
+        sources: {
+            // 'test.sol': {
+            //     content: 'contract C { function f() public { } }'
+            // }
+        },
+        settings: {
+            outputSelection: {
+                '*': {
+                    '*': ['*']
+                }
+            }
+        }
+    };
 
-  let key = fileName + ":" + contractName;
-  input[fileName] = contracts[fileName].content;
-  tool.showCompileInfo(contracts[fileName].path);
-  let output = solc.compile({sources: input}, 1, getImport);
-  let data = output.contracts[key];
-  if (data) {
-    compiled.set(contractName, data);
-    tool.setLocation(cfg.outputDir, contractName, key);
-    return data;
-  } else {
-    throw new Error("failed to compile contract " + contractName);
-  }
+    if (fileName) {
+        if (fileName.substr(-4).toLowerCase() != '.sol') {
+            throw new Error("invalid contract filename " + fileName);
+        }
+    } else {
+        fileName = contractName + '.sol';
+    }
+
+    let key = fileName + ":" + contractName;
+    input.sources[fileName] = {content: contracts[fileName].content};
+    var output = JSON.parse(solc.compile(JSON.stringify(input)));
+    let data = JSON.parse(JSON.stringify(output.contracts[fileName][contractName]));
+    if (data) {
+        compiled.set(contractName, data);
+        tool.setLocation(cfg.outputDir, contractName, key);
+        return data;
+    } else {
+        throw new Error("failed to compile contract " + contractName);
+    }
 }
 
 function getImport(filePath) {
@@ -280,12 +301,13 @@ const deploy = async (name, ...args) => {
 }
 
 const getDeployContractTxData = (data, args = []) => {
-  let contract = new web3.eth.Contract(JSON.parse(data.interface));
-  let options = {data: '0x' + data.bytecode};
-  if (args && (Object.prototype.toString.call(args)=='[object Array]') && (args.length > 0)) {
-    options.arguments = args;
-  }
-  return contract.deploy(options).encodeABI();
+
+    let contract = new web3.eth.Contract(data.abi);
+    let options = {data: '0x' + data.evm.bytecode.object};
+    if (args && (Object.prototype.toString.call(args) == '[object Array]') && (args.length > 0)) {
+        options.arguments = args;
+    }
+    return contract.deploy(options).encodeABI();
 }
 
 const sendTx = async (contractAddr, data, options) => {
