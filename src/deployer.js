@@ -291,7 +291,7 @@ const deploy = async (name, ...args) => {
     let address = receipt.contractAddress;
     let exist = tool.setAddress(cfg.outputDir, name, address);
     tool.showDeployInfo(name, receipt, exist);
-    let contract = new web3.eth.Contract(JSON.parse(data.interface), address);
+    let contract = new web3.eth.Contract(JSON.parse(data.abi), address);
     contract.address = contract._address;
     contract.abi = contract._jsonInterface;
     return contract;
