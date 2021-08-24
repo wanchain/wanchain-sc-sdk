@@ -389,7 +389,7 @@ const deployed = (name, address = null) => {
 
     let contract = new web3.eth.Contract(data.abi, address);
     contract.address = address;
-    contract.abi = contract._jsonInterface;
+    contract.abi = data.abi;
     return contract;
 }
 
