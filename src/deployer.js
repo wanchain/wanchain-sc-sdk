@@ -188,6 +188,7 @@ const compile = (contractName, fileName = null) => {
             // }
         },
         settings: {
+            "evmVersion": "byzantium",
             outputSelection: {
                 '*': {
                     '*': ['*']
