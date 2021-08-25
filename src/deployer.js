@@ -162,7 +162,7 @@ const loadContract = async (dir) => {
           }
 
           if (flatContent.indexOf('// SPDX-License-Identifier: MIT') !== -1) {
-              console.log('***********===Jacob file use // SPDX-License-Identifier: MIT ********');
+              console.log('***********file use SPDX-License-Identifier: MIT ********');
               flatContent = flatContent.replaceAll('// SPDX-License-Identifier: MIT', '');
               flatContent = '// SPDX-License-Identifier: MIT \n' + flatContent;
           }
