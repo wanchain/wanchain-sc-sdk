@@ -89,7 +89,7 @@ const init = async () => {
   } else if (cfg.network == "moonbeamTestnet") {
     chainId = '0x507';
   } else if (cfg.network == "moonbeamMainnet") {
-    chainId = '0x504';
+    chainId = '0x505';
   } else if (cfg.network == "maticTestnet") {
     chainId = '0x13881';
   } else if (cfg.network == "maticMainnet") {
