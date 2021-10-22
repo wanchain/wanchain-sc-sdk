@@ -12,7 +12,7 @@ const wanUtil = require('wanchain-util');
 const flattener = require('truffle-flattener');
 const wanTx = wanUtil.wanchainTx;
 
-const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA", ARB: "ARB", OPM: "OPM"};
+const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA", ARB: "ARB", OPM: "OPM",FTM: "FTM"};
 
 let chainId, privateKey, deployerAddress, web3, chainType;
 let contracts = new Map(); // Map(contractFileName => contractContent)
