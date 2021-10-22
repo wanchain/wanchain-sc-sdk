@@ -49,6 +49,8 @@ const config = async (userCfg) => {
       chainType = chainDict.ARB;
   }else if (['opmMainnet', 'opmTestnet'].indexOf(cfg.network) >= 0) {
       chainType = chainDict.OPM;
+  }else if (['ftmMainnet', 'ftmTestnet'].indexOf(cfg.network) >= 0) {
+      chainType = chainDict.FTM;
   } else {
     throw new Error("network can only be mainnet or testnet");
   }
