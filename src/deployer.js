@@ -106,6 +106,10 @@ const init = async () => {
     chainId = '0x45';
   }else if(cfg.network == "opmMainnet"){
     chainId = '0xa'; // todo update
+  }else if(cfg.network == "ftmMainnet"){
+      chainId = '0xfa';
+  }else if (cfg.network == "ftmTestnet"){
+      chainId = '0xfa2';
   }else {
     throw new Error(`Not support ${cfg.network}`);
   }
