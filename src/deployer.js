@@ -12,7 +12,7 @@ const wanUtil = require('wanchain-util');
 const flattener = require('truffle-flattener');
 const wanTx = wanUtil.wanchainTx;
 
-const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA", ARB: "ARB", OPM: "OPM",FTM: "FTM"};
+const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA", ARB: "ARB", OPM: "OPM", FTM: "FTM", CUSTOM: "CUSTOM"};
 
 let chainId, privateKey, deployerAddress, web3, chainType;
 let contracts = new Map(); // Map(contractFileName => contractContent)
@@ -45,12 +45,14 @@ const config = async (userCfg) => {
     chainType = chainDict.MATIC;
   } else if (['adaMainnet', 'adaTestnet'].indexOf(cfg.network) >= 0) {
       chainType = chainDict.ADA;
-  }else if (['arbMainnet', 'arbTestnet'].indexOf(cfg.network) >= 0) {
+  } else if (['arbMainnet', 'arbTestnet'].indexOf(cfg.network) >= 0) {
       chainType = chainDict.ARB;
-  }else if (['opmMainnet', 'opmTestnet'].indexOf(cfg.network) >= 0) {
+  } else if (['opmMainnet', 'opmTestnet'].indexOf(cfg.network) >= 0) {
       chainType = chainDict.OPM;
-  }else if (['ftmMainnet', 'ftmTestnet'].indexOf(cfg.network) >= 0) {
+  } else if (['ftmMainnet', 'ftmTestnet'].indexOf(cfg.network) >= 0) {
       chainType = chainDict.FTM;
+  } else if (['customNetwork'].indexOf(cfg.network) >= 0) {
+    chainType = chainDict.CUSTOM;
   } else {
     throw new Error("network can only be mainnet or testnet");
   }
@@ -100,19 +102,21 @@ const init = async () => {
     chainId = '0x67';
   } else if (cfg.network == "adaTestnet") {
     chainId = '0x67';
-  }else if (cfg.network == "arbTestnet") {
+  } else if (cfg.network == "arbTestnet") {
     chainId = '0x66eeb';
-  }else if(cfg.network == "arbMainnet"){
+  } else if(cfg.network == "arbMainnet"){
     chainId = '0x67'; // todo update
-  }else if (cfg.network == "opmTestnet") {
+  } else if (cfg.network == "opmTestnet") {
     chainId = '0x45';
-  }else if(cfg.network == "opmMainnet"){
+  } else if(cfg.network == "opmMainnet"){
     chainId = '0xa'; // todo update
-  }else if(cfg.network == "ftmMainnet"){
+  } else if(cfg.network == "ftmMainnet"){
       chainId = '0xfa';
-  }else if (cfg.network == "ftmTestnet"){
+  } else if (cfg.network == "ftmTestnet"){
       chainId = '0xfa2';
-  }else {
+  } else if (cfg.network == "customNetwork"){
+    chainId = cfg.chainId;
+  } else {
     throw new Error(`Not support ${cfg.network}`);
   }
   // chainId = (cfg.network == "mainnet") ? '0x01' : '0x03';
@@ -166,7 +170,7 @@ const loadContract = async (dir) => {
           flatContent = flatContent.replaceAll('pragma experimental ABIEncoderV2', '// pragma experimental ABIEncoderV2');
           flatContent = 'pragma experimental ABIEncoderV2; \n' + flatContent;
         }
-        
+
         contracts[path.basename(p)] = {
           path: p, 
           // content: fs.readFileSync(p, 'utf-8')

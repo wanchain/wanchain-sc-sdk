@@ -4,6 +4,7 @@ module.exports = {
   privateKey: '',
   contractDir: '', // absolute path
   outputDir: '', // absolute path, optional, default is homedir 
+  chainId: undefined, // using for custom network
   gasPrice: 180000000000,
   gasLimit: 8000000
 }
