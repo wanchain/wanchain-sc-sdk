@@ -34,7 +34,7 @@ async function deploy() {
     // send transaction to contract
     contract = deployer.deployed('WanToken');
     let initialSupply = 2100000000000000;
-    let txData = await contract.mint.getData(contract.address, initialSupply);
+    let txData = await contract.methods.mint(contract.address, initialSupply).encodeABI();
     await deployer.sendTx(contract.address, txData);
   } catch (err) {
     console.error("deploy failed: %O", err);

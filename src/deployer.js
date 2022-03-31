@@ -266,13 +266,12 @@ const deploy = async (name, ...args) => {
 }
 
 const getDeployContractTxData = (data, args = []) => {
-  let contract = web3.eth.contract(JSON.parse(data.interface));
-  let txData;
+  let contract = new web31.eth.Contract(JSON.parse(data.interface));
+  let options = {data: '0x' + data.bytecode};
   if (args && (Object.prototype.toString.call(args)=='[object Array]') && (args.length > 0)) {
-    return contract.new.getData(...args, {data: '0x' + data.bytecode});
-  } else {
-    return contract.new.getData({data: '0x' + data.bytecode});
+    options.arguments = args;
   }
+  return contract.deploy(options).encodeABI();
 }
 
 const sendTx = async (contractAddr, data, options) => {
