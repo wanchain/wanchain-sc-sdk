@@ -8,9 +8,7 @@ const tool = require('./tool');
 const Web3 = require('web3');
 const ethUtil = require('ethereumjs-util');
 const ethTx = require('ethereumjs-tx');
-const wanUtil = require('wanchain-util');
 const flattener = require('truffle-flattener');
-const wanTx = wanUtil.wanchainTx;
 
 const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA", ARB: "ARB", OPM: "OPM", FTM: "FTM", CUSTOM: "CUSTOM"};
 
@@ -71,9 +69,9 @@ const config = async (userCfg) => {
 
 const init = async () => {
   if (cfg.network == "mainnet" || cfg.network == "ethereum") {
-    chainId = '0x01';
+    chainId = '0x378';
   } else if (cfg.network == "testnet" || cfg.network == "ropsten") {
-    chainId = '0x03';
+    chainId = '0x3e7';
   } else if (cfg.network == "rinkeby") {
     chainId = '0x04';
   } else if (cfg.network == "kovan") {
@@ -298,21 +296,14 @@ const sendTx = async (contractAddr, data, options) => {
     to: contractAddr,
     nonce: await getNonce(currDeployerAddress),
     gasPrice: cfg.gasPrice,
-    gasLimit: cfg.gasLimit,      
+    gasLimit: cfg.gasLimit,
     value: value,
     data: data
   };
   // console.log("serializeTx: %O", rawTx);
 
-  let tx
-  if (chainType === chainDict.WAN) {
-    rawTx.Txtype = 0x01;
-    tx = new wanTx(rawTx);
-  } else {
-    tx = new ethTx(rawTx);
-  }
+  let tx = new ethTx(rawTx);
   // console.log("tx", JSON.stringify(tx, null, 4));
-  // let tx = new wanTx(rawTx);
   tx.sign(currPrivateKey);
   // console.log("signedTx: %O", tx);
 
@@ -372,7 +363,11 @@ const at = (name, address) => {
 }
 
 const getNonce = async (address) => {
-  return await web3.eth.getTransactionCount(address, 'pending');
+  if (chainType === "XDC") { // pending will return 0
+    return web3.eth.getTransactionCount(address);
+  } else {
+    return web3.eth.getTransactionCount(address, 'pending');
+  }
 }
 
 module.exports = {
