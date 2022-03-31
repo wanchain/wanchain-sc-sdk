@@ -6,9 +6,12 @@ const linker = require('solc/linker');
 const cfg = require('./config');
 const tool = require('./tool');
 const Web3 = require('web3');
+const Web31 = require('web3-1x');
 const ethUtil = require('ethereumjs-util');
 const ethTx = require('ethereumjs-tx');
 const flattener = require('truffle-flattener');
+
+const web31 = new Web31();
 
 const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA", ARB: "ARB", OPM: "OPM", FTM: "FTM", CUSTOM: "CUSTOM"};
 
@@ -253,7 +256,10 @@ const deploy = async (name, ...args) => {
     let address = receipt.contractAddress;
     let exist = tool.setAddress(cfg.outputDir, name, address);
     tool.showDeployInfo(name, receipt, exist);
-    return web3.eth.contract(JSON.parse(data.interface)).at(address);
+    let contract = new web31.eth.Contract(JSON.parse(data.interface), address);
+    contract.address = contract._address;
+    contract.abi = contract._jsonInterface;
+    return contract;
   } else {
     throw new Error("failed to deploy contract " + name);
   }
@@ -352,7 +358,10 @@ const deployed = (name, address = null) => {
   }
   // check path
   let data = compile(name);
-  return web3.eth.contract(JSON.parse(data.interface)).at(address);
+  let contract = new web31.eth.Contract(JSON.parse(data.interface), address);
+  contract.address = address;
+  contract.abi = contract._jsonInterface;
+  return contract;
 }
 
 const at = (name, address) => {
