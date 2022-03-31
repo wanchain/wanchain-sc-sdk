@@ -363,7 +363,7 @@ const at = (name, address) => {
 }
 
 const getNonce = async (address) => {
-  if (chainType === "XDC") { // pending will return 0
+  if ((chainId == 50) || (chainId == 51)) { // XDC, pending will return 0
     return web3.eth.getTransactionCount(address);
   } else {
     return web3.eth.getTransactionCount(address, 'pending');
