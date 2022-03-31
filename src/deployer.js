@@ -30,7 +30,6 @@ const config = async (userCfg) => {
   Object.assign(cfg, userCfg);
 
   // check required 
-  // wan mainnet and testnet, eth mainnet and testnet
   if (['mainnet', 'testnet'].indexOf(cfg.network) >= 0) {
     chainType = chainDict.WAN;
   } else if (['ethereum', 'rinkeby', 'ropsten', 'kovan'].indexOf(cfg.network) >= 0) {
@@ -54,11 +53,8 @@ const config = async (userCfg) => {
   } else if (['customNetwork'].indexOf(cfg.network) >= 0) {
     chainType = chainDict.CUSTOM;
   } else {
-    throw new Error("network can only be mainnet or testnet");
+    throw new Error("unrecognized network " + cfg.network);
   }
-  // if (['mainnet', 'testnet', 'ethereum', 'rinkeby'].indexOf(cfg.network) < 0) {
-  //   throw new Error("network can only be mainnet or testnet");
-  // }
   if (!cfg.nodeURL) {
     throw new Error("nodeURL is required");
   }
@@ -117,26 +113,22 @@ const init = async () => {
   } else if (cfg.network == "customNetwork"){
     chainId = cfg.chainId;
   } else {
-    throw new Error(`Not support ${cfg.network}`);
+    throw new Error("unrecognized network " + cfg.network);
   }
-  // chainId = (cfg.network == "mainnet") ? '0x01' : '0x03';
   privateKey = Buffer.from(cfg.privateKey, 'hex');
   deployerAddress = getAddressString(privateKey);
   console.log("\r\nStart deployment on %s...", cfg.network);
 
   // init web3
-  if (cfg.nodeURL.indexOf('https:') == 0) {
-    web3 = new Web3(cfg.nodeURL);
-  } else if (cfg.nodeURL.indexOf('http:') == 0) {
+  let protocol = cfg.nodeURL.split(':')[0];
+  if (['http', 'https'].includes(protocol)) {
     web3 = new Web3(new Web3.providers.HttpProvider(cfg.nodeURL));
-  } else if (cfg.nodeURL.indexOf('wss:') == 0) {
+  } else if (protocol === 'wss') {
     web3 = new Web3(new Web3.providers.WebsocketProvider(cfg.nodeURL));
-  } else {
-    throw new Error("invalid protocol, can only be http or wss");
   }
 
   // init output data path
-  cfg.outputDir = cfg.outputDir || path.join(os.homedir(), '.wanchain-deployer');
+  cfg.outputDir = cfg.outputDir || path.join(os.homedir(), '.wanchain-deployer', cfg.network);
   tool.mkdir(cfg.outputDir);
 
   // load contract file
@@ -164,16 +156,13 @@ const loadContract = async (dir) => {
         } catch (err) {
           console.log('err', err);
         }
-
         if (flatContent.indexOf('pragma experimental ABIEncoderV2') !== -1) {
           console.log('******* file use pragma experimental ABIEncoderV2 ********');
           flatContent = flatContent.replaceAll('pragma experimental ABIEncoderV2', '// pragma experimental ABIEncoderV2');
           flatContent = 'pragma experimental ABIEncoderV2; \n' + flatContent;
         }
-
         contracts[path.basename(p)] = {
           path: p, 
-          // content: fs.readFileSync(p, 'utf-8')
           content: flatContent
         };
       }
@@ -216,26 +205,13 @@ function getImport(filePath) {
   }
 }
 
-// const link = (contract, ...libs) => {
-//   let data = compiled.get(contract);
-//   if (!data) {
-//     compile(contract);
-//     data = compiled.get(contract);
-//   }
-//   let refs = linker.findLinkReferences(data.bytecode);
-//   console.log('link', refs, data.bytecode.length);
-//   data.bytecode = linker.linkBytecode(data.bytecode, getLibAddress(contract, refs, libs));
-//   console.log('link after', data.bytecode.length);
-
-// }
-
 const link = (contract, ...libs) => {
   let data = compiled.get(contract);
   if (!data) {
     compile(contract);
     data = compiled.get(contract);
   }
-  compile(libs[0], contract+'.sol');
+  libs.map(lib => compile(lib, contract +'.sol')); // for duplicate name contracts
   let refs = linker.findLinkReferences(data.bytecode);
   // console.log('link', refs, data.bytecode);
   data.bytecode = linker.linkBytecode(data.bytecode, getLibAddress(contract, refs, libs));
@@ -275,27 +251,24 @@ const deploy = async (name, ...args) => {
   }
   let txData = getDeployContractTxData(data, args);
   let receipt = await sendTx('', txData);
-
   if (receipt && receipt.status) {
     let address = receipt.contractAddress;
     let exist = tool.setAddress(cfg.outputDir, name, address);
     tool.showDeployInfo(name, receipt, exist);
-    let contract = new web3.eth.Contract(JSON.parse(data.interface), address);
-    contract.address = contract._address;
-    contract.abi = contract._jsonInterface;
-    return contract;
+    return web3.eth.contract(JSON.parse(data.interface)).at(address);
   } else {
     throw new Error("failed to deploy contract " + name);
   }
 }
 
 const getDeployContractTxData = (data, args = []) => {
-  let contract = new web3.eth.Contract(JSON.parse(data.interface));
-  let options = {data: '0x' + data.bytecode};
+  let contract = web3.eth.contract(JSON.parse(data.interface));
+  let txData;
   if (args && (Object.prototype.toString.call(args)=='[object Array]') && (args.length > 0)) {
-    options.arguments = args;
+    return contract.new.getData(...args, {data: '0x' + data.bytecode});
+  } else {
+    return contract.new.getData({data: '0x' + data.bytecode});
   }
-  return contract.deploy(options).encodeABI();
 }
 
 const sendTx = async (contractAddr, data, options) => {
@@ -309,7 +282,6 @@ const sendTx = async (contractAddr, data, options) => {
   let currPrivateKey;
   let currDeployerAddress;
   if (options.privateKey && options.privateKey.toLowerCase() !== cfg.privateKey.toLowerCase()) {
-
     currPrivateKey = Buffer.from(options.privateKey, 'hex');
     currDeployerAddress = getAddressString(options.privateKey);
     // currDeployerAddress = '0x' + ethUtil.privateToAddress(options.privateKey).toString('hex').toLowerCase();
@@ -318,9 +290,8 @@ const sendTx = async (contractAddr, data, options) => {
     currDeployerAddress = deployerAddress;
   }
 
-  let value = web3.utils.toWei(options.value.toString(), 'ether');
-  value = new web3.utils.BN(value);
-  value = '0x' + value.toString(16);
+  let value = web3.toWei(options.value.toString(), 'ether');
+  value = '0x' + new web3.toBigNumber(value).toString(16);
 
   let rawTx = {
     chainId: chainId,
@@ -346,7 +317,8 @@ const sendTx = async (contractAddr, data, options) => {
   // console.log("signedTx: %O", tx);
 
   try {
-    let receipt = await web3.eth.sendSignedTransaction('0x' + tx.serialize().toString('hex'));
+    let txHash = await web3.eth.sendRawTransaction('0x' + tx.serialize().toString('hex'));
+    let receipt = await waitTxReceipt(txHash);
     if (contractAddr) {
       tool.showTxInfo(receipt);
     }
@@ -355,6 +327,22 @@ const sendTx = async (contractAddr, data, options) => {
     console.error("sendTx to contract %s error: %O", contractAddr, err);
     return null;
   }  
+}
+
+const waitTxReceipt = async (txHash, timedout = 300000) => {
+  if (timedout <= 0) {
+    throw new Error("failed to get tx receipt: " + txHash);
+  }
+  try {
+    let receipt = await web3.eth.getTransactionReceipt(txHash);
+    if (receipt) {
+      return receipt;
+    }
+  } catch (err) {
+    // do nothing
+  }
+  await tool.sleep(3000);
+  return (await waitTxReceipt(txHash, timedout - 3000));
 }
 
 const deployed = (name, address = null) => {
@@ -373,20 +361,15 @@ const deployed = (name, address = null) => {
   }
   // check path
   let data = compile(name);
-  let contract = new web3.eth.Contract(JSON.parse(data.interface), address);
-  contract.address = address;
-  contract.abi = contract._jsonInterface;
-  return contract;
+  return web3.eth.contract(JSON.parse(data.interface)).at(address);
 }
 
 const at = (name, address) => {
   if (!address) {
-    throw new Error(`invalid address ${address}`);
+    throw new Error("invalid address " + address);
   }
   return deployed(name, address);
 }
-
-
 
 const getNonce = async (address) => {
   return await web3.eth.getTransactionCount(address, 'pending');

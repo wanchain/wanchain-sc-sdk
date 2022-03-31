@@ -8,6 +8,14 @@ const cmpAddress = (address1, address2) => {
   return (address1.toLowerCase() == address2.toLowerCase());
 }
 
+const sleep = (ms) => {
+  return new Promise(function(resolve) {
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
+}
+
 function mkdir(dirname) {
   if (fs.existsSync(dirname)) {
     return true;
@@ -115,6 +123,7 @@ const showTxInfo = (receipt) => {
 
 module.exports = {
   cmpAddress,
+  sleep,
   mkdir,
   setAddress,
   getAddress,

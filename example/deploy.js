@@ -7,16 +7,16 @@ let cfg = {
   privateKey: 'your-private-key',
   contractDir: path.join(path.dirname(__filename), 'contracts'),
   outputDir: '',
-  gasPrice: 180000000000,
-  gasLimit: 8000000
+  gasPrice: 1000000000,
+  gasLimit: 6000000
 }
-
-deployer.config(cfg);
 
 deploy();
 
 async function deploy() {
   try {
+    await deployer.config(cfg);
+
     // deploy a lib
     await deployer.deploy('Secp256k1');
 
@@ -24,7 +24,6 @@ async function deploy() {
     deployer.compile('SchnorrVerifier');
     deployer.link('SchnorrVerifier', 'Secp256k1');
     let contract = await deployer.deploy('SchnorrVerifier');
-    console.log("SchnorrVerifier address: %s", contract.address);
 
     // deploy a contract has constructor with parameters
     let tokenName = 'WRC20 BTC';
@@ -35,7 +34,7 @@ async function deploy() {
     // send transaction to contract
     contract = deployer.deployed('WanToken');
     let initialSupply = 2100000000000000;
-    let txData = await contract.methods.mint(contract.address, initialSupply).encodeABI();
+    let txData = await contract.mint.getData(contract.address, initialSupply);
     await deployer.sendTx(contract.address, txData);
   } catch (err) {
     console.error("deploy failed: %O", err);
