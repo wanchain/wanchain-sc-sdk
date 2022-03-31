@@ -11,11 +11,9 @@ const ethUtil = require('ethereumjs-util');
 const ethTx = require('ethereumjs-tx');
 const flattener = require('truffle-flattener');
 
-const web31 = new Web31();
-
 const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA", ARB: "ARB", OPM: "OPM", FTM: "FTM", CUSTOM: "CUSTOM"};
 
-let chainId, privateKey, deployerAddress, web3, chainType;
+let chainId, privateKey, deployerAddress, web3, chainType, web31;
 let contracts = new Map(); // Map(contractFileName => contractContent)
 let compiled = new Map();  // Map(contractName => compiledData)
 
@@ -124,8 +122,10 @@ const init = async () => {
   let protocol = cfg.nodeURL.split(':')[0];
   if (['http', 'https'].includes(protocol)) {
     web3 = new Web3(new Web3.providers.HttpProvider(cfg.nodeURL));
+    web31 = new Web31(new Web3.providers.HttpProvider(cfg.nodeURL));
   } else if (protocol === 'wss') {
     web3 = new Web3(new Web3.providers.WebsocketProvider(cfg.nodeURL));
+    web31 = new Web31(new Web3.providers.WebsocketProvider(cfg.nodeURL));
   }
 
   // init output data path
@@ -306,15 +306,16 @@ const sendTx = async (contractAddr, data, options) => {
     data: data
   };
   // console.log("serializeTx: %O", rawTx);
-
   let tx = new ethTx(rawTx);
   // console.log("tx", JSON.stringify(tx, null, 4));
   tx.sign(currPrivateKey);
   // console.log("signedTx: %O", tx);
 
   try {
-    let txHash = await web3.eth.sendRawTransaction('0x' + tx.serialize().toString('hex'));
+    let txHash = await getTxHash(tx);
+    console.log({txHash});
     let receipt = await waitTxReceipt(txHash);
+    console.log({receipt});
     if (contractAddr) {
       tool.showTxInfo(receipt);
     }
@@ -322,23 +323,34 @@ const sendTx = async (contractAddr, data, options) => {
   } catch(err) {
     console.error("sendTx to contract %s error: %O", contractAddr, err);
     return null;
-  }  
+  }
 }
 
-const waitTxReceipt = async (txHash, timedout = 300000) => {
-  if (timedout <= 0) {
-    throw new Error("failed to get tx receipt: " + txHash);
+const getTxHash = (signedTx) => {
+  // web3 sendRawTransaction return Error: spawn ENAMETOOLONG
+  return new Promise((resolve, reject) => {
+    web31.eth.sendSignedTransaction('0x' + signedTx.serialize().toString('hex'))
+    .once('transactionHash', txHash => resolve(txHash))
+    .once('error', err => reject(err))
+  });
+}
+
+const waitTxReceipt = (txHash, timedout = 300000) => {
+  const handler = function(resolve, reject) {
+    web3.eth.getTransactionReceipt(txHash, (error, receipt) => {
+      if (error || !receipt) {
+        timedout -= 2000;
+        if (timedout > 0) {
+          setTimeout(() => handler(resolve, reject), 2000);
+        } else {
+          return reject("failed to get tx receipt: " + txHash);
+        }
+      } else {
+        return resolve(receipt);
+      }
+    });
   }
-  try {
-    let receipt = await web3.eth.getTransactionReceipt(txHash);
-    if (receipt) {
-      return receipt;
-    }
-  } catch (err) {
-    // do nothing
-  }
-  await tool.sleep(3000);
-  return (await waitTxReceipt(txHash, timedout - 3000));
+  return new Promise(handler);
 }
 
 const deployed = (name, address = null) => {
