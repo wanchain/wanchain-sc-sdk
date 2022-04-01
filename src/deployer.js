@@ -13,30 +13,31 @@ const flattener = require('truffle-flattener');
 
 const buildinChainId = {
   // wanchain
-  mainnet: 0x378,
-  testnet: 0x3e7,
+  mainnet: 888,
+  testnet: 999,
   // ethereum
-  ethereum: 0x1,
-  ropsten: 0x3,
-  rinkeby: 0x4,
-  kovan: 0x2a,
+  ethereum: 1,
+  ropsten: 3,
+  rinkeby: 4,
+  kovan: 42,
+  goerli: 6284,
   // other
-  bscTestnet: 0x61,
-  bscMainnet: 0x38,
-  avalancheTestnet: 0xa869,
-  avalancheMainnet: 0xa86a,
-  moonbeamTestnet: 0x507,
-  moonbeamMainnet: 0x505,
-  maticTestnet: 0x13881,
-  maticMainnet: 0x89,
-  adaMainnet: 0x67,
-  adaTestnet: 0x67,
-  arbTestnet: 0x66eeb,
-  arbMainnet: 0x67, // todo update
-  opmTestnet: 0x45,
-  opmMainnet: 0xa, // todo update
-  ftmMainnet: 0xfa,
-  ftmTestnet: 0xfa2
+  bscMainnet: 56,
+  bscTestnet: 97,
+  avalancheMainnet: 43114,
+  avalancheTestnet: 43113,
+  moonbeamMainnet: 1285,
+  moonbeamTestnet: 1287,
+  maticMainnet: 137,
+  maticTestnet: 80001,
+  adaMainnet: 103,
+  adaTestnet: 103,
+  arbMainnet: 42161,
+  arbTestnet: 421611,
+  opmMainnet: 10,
+  opmTestnet: 69,
+  ftmMainnet: 250,
+  ftmTestnet: 4002
 }
 
 let chainId, privateKey, deployerAddress, web3, web31;
