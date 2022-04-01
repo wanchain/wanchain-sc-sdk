@@ -11,9 +11,35 @@ const ethUtil = require('ethereumjs-util');
 const ethTx = require('ethereumjs-tx');
 const flattener = require('truffle-flattener');
 
-const chainDict = { WAN: "WAN", ETH: "ETH", BSC: "BSC", AVAX: "AVAX", MOONBEAM: "MOONBEAM", MATIC: "MATIC", ADA: "ADA", ARB: "ARB", OPM: "OPM", FTM: "FTM", CUSTOM: "CUSTOM"};
+const buildinChainId = {
+  // wanchain
+  mainnet: 0x378,
+  testnet: 0x3e7,
+  // ethereum
+  ethereum: 0x1,
+  ropsten: 0x3,
+  rinkeby: 0x4,
+  kovan: 0x2a,
+  // other
+  bscTestnet: 0x61,
+  bscMainnet: 0x38,
+  avalancheTestnet: 0xa869,
+  avalancheMainnet: 0xa86a,
+  moonbeamTestnet: 0x507,
+  moonbeamMainnet: 0x505,
+  maticTestnet: 0x13881,
+  maticMainnet: 0x89,
+  adaMainnet: 0x67,
+  adaTestnet: 0x67,
+  arbTestnet: 0x66eeb,
+  arbMainnet: 0x67, // todo update
+  opmTestnet: 0x45,
+  opmMainnet: 0xa, // todo update
+  ftmMainnet: 0xfa,
+  ftmTestnet: 0xfa2
+}
 
-let chainId, privateKey, deployerAddress, web3, chainType, web31;
+let chainId, privateKey, deployerAddress, web3, web31;
 let contracts = new Map(); // Map(contractFileName => contractContent)
 let compiled = new Map();  // Map(contractName => compiledData)
 
@@ -28,32 +54,6 @@ const config = async (userCfg) => {
   // update config
   Object.assign(cfg, userCfg);
 
-  // check required 
-  if (['mainnet', 'testnet'].indexOf(cfg.network) >= 0) {
-    chainType = chainDict.WAN;
-  } else if (['ethereum', 'rinkeby', 'ropsten', 'kovan'].indexOf(cfg.network) >= 0) {
-    chainType = chainDict.ETH;
-  } else if (['bscMainnet', 'bscTestnet'].indexOf(cfg.network) >= 0) {
-    chainType = chainDict.BSC;
-  } else if (['avalancheMainnet', 'avalancheTestnet'].indexOf(cfg.network) >= 0) {
-    chainType = chainDict.AVAX;
-  } else if (['moonbeamMainnet', 'moonbeamTestnet'].indexOf(cfg.network) >= 0) {
-    chainType = chainDict.MOONBEAM;
-  } else if (['maticMainnet', 'maticTestnet'].indexOf(cfg.network) >= 0) {
-    chainType = chainDict.MATIC;
-  } else if (['adaMainnet', 'adaTestnet'].indexOf(cfg.network) >= 0) {
-      chainType = chainDict.ADA;
-  } else if (['arbMainnet', 'arbTestnet'].indexOf(cfg.network) >= 0) {
-      chainType = chainDict.ARB;
-  } else if (['opmMainnet', 'opmTestnet'].indexOf(cfg.network) >= 0) {
-      chainType = chainDict.OPM;
-  } else if (['ftmMainnet', 'ftmTestnet'].indexOf(cfg.network) >= 0) {
-      chainType = chainDict.FTM;
-  } else if (['customNetwork'].indexOf(cfg.network) >= 0) {
-    chainType = chainDict.CUSTOM;
-  } else {
-    throw new Error("unrecognized network " + cfg.network);
-  }
   if (!cfg.nodeURL) {
     throw new Error("nodeURL is required");
   }
@@ -69,56 +69,16 @@ const config = async (userCfg) => {
 }
 
 const init = async () => {
-  if (cfg.network == "mainnet" || cfg.network == "ethereum") {
-    chainId = '0x378';
-  } else if (cfg.network == "testnet" || cfg.network == "ropsten") {
-    chainId = '0x3e7';
-  } else if (cfg.network == "rinkeby") {
-    chainId = '0x04';
-  } else if (cfg.network == "kovan") {
-    chainId = '0x2a';
-  } else if (cfg.network == "bscTestnet") {
-    chainId = '0x61';
-  } else if (cfg.network == "bscMainnet") {
-    chainId = '0x38';
-  } else if (cfg.network == "avalancheTestnet") {
-    chainId = '0xa869';
-  } else if (cfg.network == "avalancheMainnet") {
-    chainId = '0xa86a';
-  } else if (cfg.network == "moonbeamTestnet") {
-    chainId = '0x507';
-  } else if (cfg.network == "moonbeamMainnet") {
-    chainId = '0x505';
-  } else if (cfg.network == "maticTestnet") {
-    chainId = '0x13881';
-  } else if (cfg.network == "maticMainnet") {
-    chainId = '0x89';
-  } else if (cfg.network == "adaMainnet") {
-    chainId = '0x67';
-  } else if (cfg.network == "adaTestnet") {
-    chainId = '0x67';
-  } else if (cfg.network == "arbTestnet") {
-    chainId = '0x66eeb';
-  } else if(cfg.network == "arbMainnet"){
-    chainId = '0x67'; // todo update
-  } else if (cfg.network == "opmTestnet") {
-    chainId = '0x45';
-  } else if(cfg.network == "opmMainnet"){
-    chainId = '0xa'; // todo update
-  } else if(cfg.network == "ftmMainnet"){
-      chainId = '0xfa';
-  } else if (cfg.network == "ftmTestnet"){
-      chainId = '0xfa2';
-  } else if (cfg.network == "customNetwork"){
-    chainId = cfg.chainId;
-  } else {
+  let chainId = cfg.chainId || buildinChainId[cfg.network];
+  if (!chainId) {
     throw new Error("unrecognized network " + cfg.network);
   }
+
   privateKey = Buffer.from(cfg.privateKey, 'hex');
   deployerAddress = getAddressString(privateKey);
   console.log("\r\nStart deployment on %s...", cfg.network);
 
-  // init web3
+  // init web3 0.x and web3 1.x instance
   let protocol = cfg.nodeURL.split(':')[0];
   if (['http', 'https'].includes(protocol)) {
     web3 = new Web3(new Web3.providers.HttpProvider(cfg.nodeURL));
@@ -253,12 +213,12 @@ const deploy = async (name, ...args) => {
   let txData = getDeployContractTxData(data, args);
   let receipt = await sendTx('', txData);
   if (receipt && receipt.status) {
-    let address = receipt.contractAddress;
+    let address = tool.native2evmAddress(receipt.contractAddress);
     let exist = tool.setAddress(cfg.outputDir, name, address);
     tool.showDeployInfo(name, receipt, exist);
     let contract = new web31.eth.Contract(JSON.parse(data.interface), address);
-    contract.address = contract._address;
-    contract.abi = contract._jsonInterface;
+    contract.address = contract.address || contract._address; // compatible for web3 0.x and web3 1.x
+    contract.abi = contract.abi || contract._jsonInterface; // compatible for web3 0.x and web3 1.x
     return contract;
   } else {
     throw new Error("failed to deploy contract " + name);
@@ -293,8 +253,8 @@ const sendTx = async (contractAddr, data, options) => {
     currDeployerAddress = deployerAddress;
   }
 
-  let value = web3.toWei(options.value.toString(), 'ether');
-  value = '0x' + new web3.toBigNumber(value).toString(16);
+  let value = web31.utils.toWei(options.value.toString(), 'ether');
+  value = '0x' + new web31.utils.BN(value).toString(16);
 
   let rawTx = {
     chainId: chainId,
@@ -313,9 +273,9 @@ const sendTx = async (contractAddr, data, options) => {
 
   try {
     let txHash = await getTxHash(tx);
-    console.log({txHash});
+    // console.log({txHash});
     let receipt = await waitTxReceipt(txHash);
-    console.log({receipt});
+    // console.log({receipt});
     if (contractAddr) {
       tool.showTxInfo(receipt);
     }
@@ -327,7 +287,7 @@ const sendTx = async (contractAddr, data, options) => {
 }
 
 const getTxHash = (signedTx) => {
-  // web3 sendRawTransaction return Error: spawn ENAMETOOLONG
+  // web3 0.x sendRawTransaction return Error: spawn ENAMETOOLONG
   return new Promise((resolve, reject) => {
     web31.eth.sendSignedTransaction('0x' + signedTx.serialize().toString('hex'))
     .once('transactionHash', txHash => resolve(txHash))
@@ -336,6 +296,7 @@ const getTxHash = (signedTx) => {
 }
 
 const waitTxReceipt = (txHash, timedout = 300000) => {
+  // web3 1.x getTransactionReceipt checksum address maybe failed for variant evm
   const handler = function(resolve, reject) {
     web3.eth.getTransactionReceipt(txHash, (error, receipt) => {
       if (error || !receipt) {
@@ -355,6 +316,7 @@ const waitTxReceipt = (txHash, timedout = 300000) => {
 
 const deployed = (name, address = null) => {
   // check address
+  address = tool.native2evmAddress(address);
   let exist = tool.getAddress(cfg.outputDir, name);
   if (address) {
     if (!exist) { // do not overwrite exist
@@ -370,8 +332,8 @@ const deployed = (name, address = null) => {
   // check path
   let data = compile(name);
   let contract = new web31.eth.Contract(JSON.parse(data.interface), address);
-  contract.address = address;
-  contract.abi = contract._jsonInterface;
+  contract.address = address; // compatible for web3 0.x and web3 1.x
+  contract.abi = contract.abi || contract._jsonInterface; // compatible for web3 0.x and web3 1.x
   return contract;
 }
 
@@ -383,6 +345,7 @@ const at = (name, address) => {
 }
 
 const getNonce = async (address) => {
+  address = tool.native2evmAddress(address);
   if ((chainId == 50) || (chainId == 51)) { // XDC, pending will return 0
     return web3.eth.getTransactionCount(address);
   } else {

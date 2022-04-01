@@ -80,6 +80,11 @@ const getLocation = (dir, name) => {
   }
 }
 
+const native2evmAddress = (chain, address) => {
+  // XDC: ^xdc[0-9a-fA-F]{40}
+  return '0x' + address.substr(-40);
+}
+
 const showCompileInfo = (filePath) => {
   console.log("");
   console.log("   Compiling '%s'", filePath);
@@ -129,6 +134,7 @@ module.exports = {
   getAddress,
   setLocation,
   getLocation,
+  native2evmAddress,
   showCompileInfo,
   showLinkInfo,
   showDeployInfo,
