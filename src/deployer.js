@@ -69,7 +69,7 @@ const config = async (userCfg) => {
 }
 
 const init = async () => {
-  let chainId = cfg.chainId || buildinChainId[cfg.network];
+  chainId = cfg.chainId || buildinChainId[cfg.network];
   if (!chainId) {
     throw new Error("unrecognized network " + cfg.network);
   }
@@ -213,7 +213,7 @@ const deploy = async (name, ...args) => {
   let txData = getDeployContractTxData(data, args);
   let receipt = await sendTx('', txData);
   if (receipt && receipt.status) {
-    let address = tool.native2evmAddress(receipt.contractAddress);
+    let address = tool.native2evmAddress(chainId, receipt.contractAddress);
     let exist = tool.setAddress(cfg.outputDir, name, address);
     tool.showDeployInfo(name, receipt, exist);
     let contract = new web31.eth.Contract(JSON.parse(data.interface), address);
@@ -316,10 +316,10 @@ const waitTxReceipt = (txHash, timedout = 300000) => {
 
 const deployed = (name, address = null) => {
   // check address
-  address = tool.native2evmAddress(address);
   let exist = tool.getAddress(cfg.outputDir, name);
   if (address) {
     if (!exist) { // do not overwrite exist
+      address = tool.native2evmAddress(chainId, address);
       tool.setAddress(cfg.outputDir, name, address);
     }
   } else {
@@ -345,7 +345,7 @@ const at = (name, address) => {
 }
 
 const getNonce = async (address) => {
-  address = tool.native2evmAddress(address);
+  address = tool.native2evmAddress(chainId, address);
   if ((chainId == 50) || (chainId == 51)) { // XDC, pending will return 0
     return web3.eth.getTransactionCount(address);
   } else {

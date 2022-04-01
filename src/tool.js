@@ -80,7 +80,7 @@ const getLocation = (dir, name) => {
   }
 }
 
-const native2evmAddress = (chain, address) => {
+const native2evmAddress = (chainId, address) => {
   // XDC: ^xdc[0-9a-fA-F]{40}
   return '0x' + address.substr(-40);
 }
