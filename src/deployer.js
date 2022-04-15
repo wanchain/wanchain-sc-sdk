@@ -213,7 +213,7 @@ const deploy = async (name, ...args) => {
   }
   let txData = getDeployContractTxData(data, args);
   let receipt = await sendTx('', txData);
-  if (receipt && receipt.status) {
+  if (receipt && (receipt.status == 1)) {
     let address = tool.native2evmAddress(chainId, receipt.contractAddress);
     let exist = tool.setAddress(cfg.outputDir, name, address);
     tool.showDeployInfo(name, receipt, exist);
