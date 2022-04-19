@@ -1,10 +1,9 @@
 module.exports = {
-  network: 'mainnet', // 'mainnet' or 'testnet'
-  nodeURL: 'wss://api.wanchain.org:8443/ws/v3/0a66f04832e46d19af673d38b857baa1929fa739394d51e7062590cff06b32ac', // http or wss
+  fullNode: 'https://api.nileex.io',
+  solidityNode: 'https://api.nileex.io',
+  eventServer: 'https://api.nileex.io',
   privateKey: '',
   contractDir: '', // absolute path
   outputDir: '', // absolute path, optional, default is homedir 
-  chainId: undefined, // using for custom network
-  gasPrice: 180000000000,
-  gasLimit: 8000000
+  feeLimit: 3000000000,
 }

@@ -1,32 +1,28 @@
 {
-  "name": "wanchain-sc-sdk",
-  "version": "1.0.1",
-  "description": "SDK for deploying smart contracts on Wanchain",
+  "name": "tron-sc-sdk",
+  "version": "1.0.0",
+  "description": "SDK for deploying smart contracts on tron",
   "main": "index.js",
-  "author": "wanchain-dev <techsupport@wanchain.org>",
   "license": "Apache-2.0",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "wanchain",
-    "contract",
-    "deploy"
+    "tron",
+    "deploy",
+    "contract"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wanchain/wanchain-sc-sdk.git"
+    "url": "git+https://github.com/zhwir/tron-sc-sdk.git"
   },
-  "homepage": "https://github.com/wanchain/wanchain-sc-sdk#readme",
+  "homepage": "https://github.com/zhwir/tron-sc-sdk#readme",
   "bugs": {
-    "url": "https://github.com/wanchain/wanchain-sc-sdk/issues"
+    "url": "https://github.com/zhwir/tron-sc-sdk/issues"
   },
   "dependencies": {
-    "ethereumjs-tx": "^1.3.7",
     "solc": "^0.4.26",
-    "truffle-flattener": "^1.5.0",
-    "web3": "^0.20.7",
-    "web3-1x": "npm:web3@^1.2.1"
+    "tronweb": "^4.1.0"
   },
   "directories": {
     "example": "example"

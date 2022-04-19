@@ -1,19 +1,25 @@
 const fs = require('fs');
 const path = require('path');
+const TronWeb = require('tronweb');
 
 const contractAddressFile = 'ContractAddress.json';
 const contractLocationFile = 'ContractLocation.json';
 
-const cmpAddress = (address1, address2) => {
-  return (address1.toLowerCase() == address2.toLowerCase());
-}
-
-const sleep = (ms) => {
-  return new Promise(function(resolve) {
-    setTimeout(() => {
-      resolve();
-    }, ms);
-  });
+function getTronAddrInfo(addr) {
+  if (TronWeb.isAddress(addr)) {
+    let hex = "", base58 = "";
+    if ((addr.length === 42) && (addr.indexOf('41') === 0)) {
+      hex = addr;
+      base58 = TronWeb.address.fromHex(addr);
+    } else {
+      hex = tronWeb.address.toHex(addr);
+      base58 = addr;
+    }
+    let evm = ('0x' + hex.slice(2)).toLocaleLowerCase();
+    return {hex, base58, evm};
+  } else {
+    throw new Error("invalid address: " + addr);
+  }
 }
 
 function mkdir(dirname) {
@@ -45,19 +51,20 @@ const loadData = (filePath) => {
 }
 
 const setAddress = (dir, name, address) => {
+  let addrInfo = getTronAddrInfo(address);
   let addressMap = loadData(path.join(dir, contractAddressFile));
   let exist = addressMap.get(name);
-  addressMap.set(name, address);
+  addressMap.set(name, {hex: addrInfo.hex, base58: addrInfo.base58});
   let p = path.join(dir, contractAddressFile);
   write2file(p, JSON.stringify([...addressMap]));
   return exist;
 }
 
-const getAddress = (dir, name) => {
+const getAddressInfo = (dir, name) => {
   let addressMap = loadData(path.join(dir, contractAddressFile));
-  let address = addressMap.get(name);
-  if (address) {
-    return address;
+  let addrInfo = addressMap.get(name);
+  if (addrInfo) {
+    return addrInfo;
   } else {
     throw new Error(name + " is not deployed");
   }
@@ -80,11 +87,6 @@ const getLocation = (dir, name) => {
   }
 }
 
-const native2evmAddress = (chainId, address) => {
-  // XDC: ^xdc[0-9a-fA-F]{40}
-  return '0x' + address.substr(-40);
-}
-
 const showCompileInfo = (filePath) => {
   console.log("");
   console.log("   Compiling '%s'", filePath);
@@ -95,7 +97,7 @@ const showLinkInfo = (contract, lib, dir) => {
   console.log("");
   console.log("   Linking");
   console.log("   -------");
-  console.log("   * Contract: %s <--> Library: %s (at address: %s)", contract, lib, getAddress(dir, lib));
+  console.log("   * Contract: %s <--> Library: %s (at address: %s)", contract, lib, getAddressInfo(dir, lib).hex);
   console.log("");
 }
 
@@ -105,11 +107,11 @@ const showDeployInfo = (name, receipt, exist) => {
   let title = action + " '" + name + "'";
   console.log("   %s", title);
   console.log("   %s", new Array(title.length).join('-'));
-  console.log("   > transaction hash:    %s", receipt.transactionHash);
-  console.log("   > contract address:    %s", receipt.contractAddress);
-  console.log("   > block number:        %d", receipt.blockNumber);
-  console.log("   > creator:             %s", receipt.from);
-  console.log("   > gas used:            %d", receipt.gasUsed);
+  console.log("   > transaction hash:    %s", receipt.transaction.txID);
+  console.log("   > contract address:    %s", receipt.transaction.contract_address);
+  console.log("   > block number:        %d", Number('0x' + receipt.transaction.raw_data.ref_block_bytes));
+  // console.log("   > creator:             %s", receipt.from);
+  // console.log("   > gas used:            %d", receipt.gasUsed);
   console.log("");
 }
 
@@ -118,23 +120,21 @@ const showTxInfo = (receipt) => {
   let title = "Sending transaction to contract";
   console.log("   %s", title);
   console.log("   %s", new Array(title.length).join('-'));
-  console.log("   > transaction hash:    %s", receipt.transactionHash);
-  console.log("   > contract address:    %s", receipt.to);
-  console.log("   > block number:        %d", receipt.blockNumber);
-  console.log("   > sender:              %s", receipt.from);
-  console.log("   > gas used:            %d", receipt.gasUsed);
-  console.log("   > status:              %s", receipt.status);
+  console.log("   > transaction hash:    %s", receipt);
+  // console.log("   > contract address:    %s", receipt.to);
+  // console.log("   > block number:        %d", receipt.blockNumber);
+  // console.log("   > sender:              %s", receipt.from);
+  // console.log("   > gas used:            %d", receipt.gasUsed);
+  // console.log("   > status:              %s", receipt.status);
 }
 
 module.exports = {
-  cmpAddress,
-  sleep,
+  getTronAddrInfo,
   mkdir,
   setAddress,
-  getAddress,
+  getAddressInfo,
   setLocation,
   getLocation,
-  native2evmAddress,
   showCompileInfo,
   showLinkInfo,
   showDeployInfo,

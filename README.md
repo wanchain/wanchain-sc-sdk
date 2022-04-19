@@ -1,24 +1,20 @@
-wanchain-sc-sdk
+tron-sc-sdk
 ========
 
-SDK for deploying smart contracts on Wanchain.
+SDK for deploying smart contracts on Tron.
 
 ## Installation
 Use NPM or Yarn to install the package:
 ```bash
-npm install --save wanchain-sc-sdk
+npm install --save tron-sc-sdk
 ```
 ## Configuration
 
 Before deploying smart contracts, some config items are required.
 
-<li>network</li>
-
-Choose to deploy on "mainnet" or "testnet", default is mainnet.
-
 <li>nodeURL</li>
 
-Wanchain node for web3 to connect and send transactions, http and wss connections are supported, default is iWan.
+Tron node for tronWeb to connect and send transactions, http and wss connections are supported, default is iWan.
 
 <li>privateKey</li>
 
@@ -31,14 +27,6 @@ Contracts source code directory, it should be absolute path, can include subfold
 <li>outputDir</li>
 
 Directory to output deployment information, it should be absolute path, default is homedir of user.
-
-<li>gasPrice</li>
-
-Default is 180 Gwin.
-
-<li>gasLimit</li>
-
-Default is 8 million.
 
 ## APIs
 
@@ -70,10 +58,10 @@ Get a instance of contract which is deployed before.
 
 Step 1: Create a deployment script file, deploy.js for example.
 
-Step 2: Import wanchain-sc-sdk package.
+Step 2: Import tron-sc-sdk package.
 
 ```javascript
-const deployer = require('wanchain-sc-sdk');
+const deployer = require('tron-sc-sdk');
 ```
 
 Step 3: Config the deployer.
@@ -81,14 +69,14 @@ Step 3: Config the deployer.
 ```javascript
 const cfg = {
   privateKey: 'your-private-key',
-  contractDir: 'contracts-directory',
+  contractDir: 'abi-directory',
   ......
 }
 deployer.config(cfg);
 ```
 Step 4: Compose deployment scripts.
 
-[example](https://github.com/wanchain/wanchain-sc-sdk/blob/master/example/deploy.js)
+[example](https://github.com/zhwir/tron-sc-sdk/blob/master/example/deploy.js)
 
 Step 5: Start to deploy.
 
