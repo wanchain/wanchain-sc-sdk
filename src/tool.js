@@ -101,31 +101,32 @@ const showLinkInfo = (contract, lib, dir) => {
   console.log("");
 }
 
-const showDeployInfo = (name, receipt, exist) => {
+const showDeployInfo = (name, receipt, exist, sender) => {
   console.log("");
   let action = exist? "Replacing" : "Deploying";
   let title = action + " '" + name + "'";
   console.log("   %s", title);
   console.log("   %s", new Array(title.length).join('-'));
-  console.log("   > transaction hash:    %s", receipt.transaction.txID);
-  console.log("   > contract address:    %s", receipt.transaction.contract_address);
-  console.log("   > block number:        %d", Number('0x' + receipt.transaction.raw_data.ref_block_bytes));
-  // console.log("   > creator:             %s", receipt.from);
-  // console.log("   > gas used:            %d", receipt.gasUsed);
+  console.log("   > transaction hash:    %s", receipt.txID);
+  console.log("   > contract address:    %s", receipt.contract_address);
+  console.log("   > block number:        %d", Number('0x' + receipt.raw_data.ref_block_bytes));
+  console.log("   > creator:             %s", sender);
+  console.log("   > fee_limit:           %d", receipt.raw_data.fee_limit);
+  console.log("   > result:              %s", receipt.ret[0].contractRet);
   console.log("");
 }
 
-const showTxInfo = (receipt) => {
+const showTxInfo = (receipt, sender) => {
   console.log("");
   let title = "Sending transaction to contract";
   console.log("   %s", title);
   console.log("   %s", new Array(title.length).join('-'));
-  console.log("   > transaction hash:    %s", receipt);
-  // console.log("   > contract address:    %s", receipt.to);
-  // console.log("   > block number:        %d", receipt.blockNumber);
-  // console.log("   > sender:              %s", receipt.from);
-  // console.log("   > gas used:            %d", receipt.gasUsed);
-  // console.log("   > status:              %s", receipt.status);
+  console.log("   > transaction hash:    %s", receipt.txID);
+  console.log("   > contract address:    %s", receipt.raw_data.contract[0].parameter.value.contract_address);
+  console.log("   > block number:        %d", Number('0x' + receipt.raw_data.ref_block_bytes));
+  console.log("   > sender:              %s", sender);
+  console.log("   > fee limit:           %d", receipt.raw_data.fee_limit);
+  console.log("   > result:              %s", receipt.ret[0].contractRet);
 }
 
 module.exports = {

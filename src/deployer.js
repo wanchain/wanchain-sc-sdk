@@ -7,7 +7,7 @@ const cfg = require('./config');
 const tool = require('./tool');
 const TronWeb = require('tronweb');
 
-let privateKey, deployerAddress, tronWeb;
+let privateKey, tronWeb;
 let contracts = new Map(); // Map(contractFileName => contractContent)
 let compiled = new Map();  // Map(contractName => compiledData)
 
@@ -41,7 +41,6 @@ const init = () => {
   tronWeb = new TronWeb(cfg.fullNode, cfg.solidityNode, cfg.eventServer, cfg.privateKey);
   // console.log({tronWeb});
   privateKey = cfg.privateKey;
-  deployerAddress = tronWeb.address.toHex(tronWeb.address.fromPrivateKey(privateKey));
   console.log("\r\nstart deploy on %s...", cfg.fullNode);
 
   // init output data path
@@ -148,14 +147,20 @@ const deploy = async (name, ...paras) => {
     parameters: paras,
     name
   };
-  // console.log("deploy args: %O, deployerAddress: %O", args, deployerAddress);
-  let tx = await tronWeb.transactionBuilder.createSmartContract(args, deployerAddress);
+  // console.log("deploy args: %O, deployer address: %O", args, tronWeb.defaultAddress.hex);
+  let tx = await tronWeb.transactionBuilder.createSmartContract(args, tronWeb.defaultAddress.hex);
   let signedTx = await tronWeb.trx.sign(tx, privateKey);
-  let receipt = await tronWeb.trx.sendRawTransaction(signedTx);
-  // console.log("deploy receipt: %O", receipt);
-  if (receipt.result) { // true or false
-    let exist = tool.setAddress(cfg.outputDir, name, receipt.transaction.contract_address);
-    tool.showDeployInfo(name, receipt, exist);
+  let result = await tronWeb.trx.sendRawTransaction(signedTx);
+  if (result) {
+    let receipt = await waitTxReceipt(result.transaction.txID);
+    // console.log("deploy receipt: %O", receipt);
+    if (receipt.ret[0].contractRet === "SUCCESS") {
+      let exist = tool.setAddress(cfg.outputDir, name, receipt.contract_address);
+      tool.showDeployInfo(name, receipt, exist, tronWeb.defaultAddress.hex);
+      return;
+    } else {
+      tool.showDeployInfo(name, receipt, false, tronWeb.defaultAddress.hex);
+    }
   } else {
     throw new Error("failed to deploy contract " + name);
   }
@@ -169,13 +174,31 @@ const sendTx = async (tx, options = {}) => {
     shouldPollResponse: false // true always return [], why?
   };
   let txHash = await tx.send(txOptions);
-  // let receipt = await tronWeb.trx.getTransactionInfo(txHash); // always return {}, why?
-  if (txHash) {
-    tool.showTxInfo(txHash);
-  } else {
-    console.error("sendTx to contract error");
-    return null;    
+  let receipt = await waitTxReceipt(txHash);
+  tool.showTxInfo(receipt, tronWeb.defaultAddress.hex);
+  if (receipt.ret[0].contractRet !== "SUCCESS") {
+    throw new Error("sendTx to contract error");
   }
+}
+
+const waitTxReceipt = (txHash, timedout = 30000) => {
+  const handler = function(resolve, reject) {
+    tronWeb.trx.getConfirmedTransaction(txHash, (error, receipt) => {
+      // console.log("tx %s receipt: %O", txHash, receipt)
+      if (error || (!receipt) || (!receipt.ret) || (!receipt.ret[0].contractRet)) {
+        timedout -= 2000;
+        if (timedout > 0) {
+          setTimeout(() => handler(resolve, reject), 2000);
+        } else {
+          return reject("failed to get tx receipt: " + txHash);
+        }
+      } else {
+        // console.log("waitTxReceipt: %O", receipt);
+        return resolve(receipt);
+      }
+    });
+  }
+  return new Promise(handler);
 }
 
 const deployed = async (name, address = null) => {
@@ -220,6 +243,7 @@ module.exports = {
   link,
   deploy,
   sendTx,
+  waitTxReceipt,
   deployed,
   at,
   getTronAddrInfo
