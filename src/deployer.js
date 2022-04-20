@@ -44,8 +44,11 @@ const init = () => {
   console.log("\r\nstart deploy on %s...", cfg.fullNode);
 
   // init output data path
-  let outputDir = cfg.network? ('.tron-deployer/' + cfg.network) : '.tron-deployer';
-  cfg.outputDir = cfg.outputDir || path.join(os.homedir(), outputDir);
+  let outputDir = cfg.outputDir || path.join(os.homedir(), '.tron-deployer');
+  if (cfg.network) {
+    outputDir = path.join(outputDir, cfg.network);
+  }
+  cfg.outputDir = outputDir;
   tool.mkdir(cfg.outputDir);
 
   // load contract file
