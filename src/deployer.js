@@ -137,18 +137,19 @@ const deploy = async (name, ...paras) => {
   if (!data) {
     data = compile(name);
   }
-  const args = {
-    feeLimit: 1000000000,
+  const options = {
+    feeLimit: 10000000000,
     callValue: 0,
-    userFeePercentage: 10,
+    userFeePercentage: 50,
     originEnergyLimit: 10000000,
     abi: data.abi,
+    funcABIV2: data.abi,
     bytecode: data.bytecode,
-    parameters: paras,
+    parametersV2: paras,
     name
   };
-  // console.log("deploy args: %O, deployer address: %O", args, tronWeb.defaultAddress.hex);
-  let tx = await tronWeb.transactionBuilder.createSmartContract(args, tronWeb.defaultAddress.hex);
+  // console.log("deploy options: %O, deployer address: %O", options, tronWeb.defaultAddress.hex);
+  let tx = await tronWeb.transactionBuilder.createSmartContract(options, tronWeb.defaultAddress.hex);
   let signedTx = await tronWeb.trx.sign(tx, privateKey);
   let result = await tronWeb.trx.sendRawTransaction(signedTx);
   if (result) {
@@ -161,15 +162,14 @@ const deploy = async (name, ...paras) => {
     } else {
       tool.showDeployInfo(name, receipt, false, tronWeb.defaultAddress.hex);
     }
-  } else {
-    throw new Error("failed to deploy contract " + name);
   }
+  throw new Error("failed to deploy contract " + name);
 }
 
 const sendTx = async (tx, options = {}) => {
   tronWeb.setPrivateKey(options.privateKey || privateKey);
   let txOptions = {
-    feeLimit: options.feeLimit || 100000000,
+    feeLimit: options.feeLimit || 10000000000,
     callValue: options.callValue || 0,
     shouldPollResponse: false // true always return [], why?
   };
@@ -181,7 +181,7 @@ const sendTx = async (tx, options = {}) => {
   }
 }
 
-const waitTxReceipt = (txHash, timedout = 30000) => {
+const waitTxReceipt = (txHash, timedout = 180000) => {
   const handler = function(resolve, reject) {
     tronWeb.trx.getConfirmedTransaction(txHash, (error, receipt) => {
       // console.log("tx %s receipt: %O", txHash, receipt)

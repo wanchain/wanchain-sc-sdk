@@ -5,5 +5,5 @@ module.exports = {
   privateKey: '',
   contractDir: '', // absolute path
   outputDir: '', // absolute path, optional, default is homedir 
-  feeLimit: 5000000000,
+  feeLimit: 10000000000,
 }
