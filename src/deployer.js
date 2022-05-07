@@ -65,12 +65,14 @@ const loadContract = (dir) => {
     } else {
       if (file.indexOf('.json') > 0) {
         let o = require(p);
-        contracts[path.basename(o.sourcePath)] = {
-          contractName: o.contractName,
-          sourcePath: o.sourcePath,
-          abi: o.abi,
-          bytecode: o.bytecode
-        };
+        if (o.bytecode !== '0x') {
+          contracts[path.basename(o.sourcePath)] = {
+            contractName: o.contractName,
+            sourcePath: o.sourcePath,
+            abi: o.abi,
+            bytecode: o.bytecode
+          };
+        }
       }
     }
   }
@@ -146,8 +148,8 @@ const deploy = async (name, ...paras) => {
     userFeePercentage: 50,
     originEnergyLimit: 10000000,
     abi: data.abi,
-    funcABIV2: data.abi,
     bytecode: data.bytecode,
+    funcABIV2: data.abi.find(v => (v.type === "constructor") || ((v.type === "function") && (v.name === name))),
     parametersV2: paras,
     name
   };
