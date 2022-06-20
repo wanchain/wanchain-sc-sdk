@@ -125,7 +125,9 @@ const showTxInfo = (receipt, sender) => {
   console.log("   > contract address:    %s", receipt.raw_data.contract[0].parameter.value.contract_address);
   console.log("   > block number:        %d", Number('0x' + receipt.raw_data.ref_block_bytes));
   console.log("   > sender:              %s", sender);
-  console.log("   > fee limit:           %d", receipt.raw_data.fee_limit);
+  if (receipt.raw_data.fee_limit) {
+    console.log("   > fee limit:           %d", receipt.raw_data.fee_limit);
+  }
   console.log("   > result:              %s", receipt.ret[0].contractRet);
 }
 

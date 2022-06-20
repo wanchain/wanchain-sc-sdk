@@ -242,6 +242,21 @@ const getTronAddrInfo = (address) => {
   return tool.getTronAddrInfo(address);
 }
 
+const updateSetting = async (contractAddress, userPercent, ownerAddress) => {
+  let tx = await tronWeb.transactionBuilder.updateSetting(contractAddress, userPercent, ownerAddress);
+  let signedTx = await tronWeb.trx.sign(tx, privateKey);
+  let result = await tronWeb.trx.sendRawTransaction(signedTx);
+  if (result) {
+    let receipt = await waitTxReceipt(result.transaction.txID);
+    // console.log("updateSetting receipt: %O", receipt);
+    tool.showTxInfo(receipt, tronWeb.defaultAddress.hex);
+    if (receipt.ret[0].contractRet === "SUCCESS") {
+      return;
+    }
+  }
+  throw new Error("failed to updateSetting contract " + contractAddress);
+}
+
 module.exports = {
   config,
   compile,
@@ -251,5 +266,6 @@ module.exports = {
   waitTxReceipt,
   deployed,
   at,
-  getTronAddrInfo
+  getTronAddrInfo,
+  updateSetting
 }
