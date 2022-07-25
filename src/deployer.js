@@ -145,7 +145,7 @@ const deploy = async (name, ...paras) => {
   const options = {
     feeLimit: 10000000000,
     callValue: 0,
-    userFeePercentage: 50,
+    userFeePercentage: 100,
     originEnergyLimit: 10000000,
     abi: data.abi,
     bytecode: data.bytecode,
