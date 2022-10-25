@@ -214,6 +214,9 @@ const deployed = async (name, address = null) => {
     console.log(name + " is not deployed");
   }
   let data = compiled.get(name);
+  if (!data) {
+    data = compile(name);
+  }
   if (address) {
     // do not retrive contract from chain, because tronweb do not support parse tuple type input para from abi
     let contract = await tronWeb.contract(data.abi, address);
