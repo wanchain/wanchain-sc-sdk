@@ -1,7 +1,6 @@
 module.exports = {
-  fullNode: 'https://api.nileex.io',
-  solidityNode: 'https://api.nileex.io',
-  eventServer: 'https://api.nileex.io',
+  fullNode: 'https://api.nileex.io', // fullHost
+  apiKey: '', // trongrid api key
   privateKey: '',
   contractDir: '', // absolute path
   outputDir: '', // absolute path, optional, default is homedir 

@@ -15,21 +15,20 @@ const config = async (userCfg) => {
   // update config
   Object.assign(cfg, userCfg);
 
-  // check required 
-  if (!cfg.fullNode) {
-    throw new Error("fullNode is required");
+  // check required
+  let fullNode = cfg.fullNode || cfg.fullHost;
+  if (!fullNode) {
+    throw new Error("fullNode or fullHost is required");
   }
-  if (!cfg.solidityNode) {
-    throw new Error("solidityNode is required");
-  }
-  if (!cfg.eventServer) {
-    throw new Error("eventServer is required");
-  }
+  cfg.fullHost = fullNode; // tronweb use fullHost as default solidityNode and eventServer
   if ((!cfg.privateKey) || cfg.privateKey.length != 64) {
     throw new Error("invalid private key");
   }
   if ((!cfg.contractDir) || (!fs.existsSync(cfg.contractDir))) {
     throw new Error("contract dir doesn't exist");
+  }
+  if (cfg.apiKey) {
+    cfg.headers = {"TRON-PRO-API-KEY": cfg.apiKey};
   }
 
   // init deployer
@@ -38,10 +37,10 @@ const config = async (userCfg) => {
 
 const init = () => {
   // init tronWeb
-  tronWeb = new TronWeb(cfg.fullNode, cfg.solidityNode, cfg.eventServer, cfg.privateKey);
+  tronWeb = new TronWeb(cfg);
   // console.log({tronWeb});
   privateKey = cfg.privateKey;
-  console.log("\r\nstart deploy on %s...", cfg.fullNode);
+  console.log("\r\nstart deploy on %s...", cfg.fullHost);
 
   // init output data path
   let outputDir = cfg.outputDir || path.join(os.homedir(), '.tron-deployer');
