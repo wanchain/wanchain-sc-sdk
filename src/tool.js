@@ -12,7 +12,7 @@ function getTronAddrInfo(addr) {
       hex = addr;
       base58 = TronWeb.address.fromHex(addr);
     } else {
-      hex = tronWeb.address.toHex(addr);
+      hex = TronWeb.address.toHex(addr);
       base58 = addr;
     }
     let evm = ('0x' + hex.slice(2)).toLocaleLowerCase();
