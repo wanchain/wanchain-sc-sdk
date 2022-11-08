@@ -244,11 +244,11 @@ const getTronAddrInfo = (address) => {
   return tool.getTronAddrInfo(address);
 }
 
-const updateSetting = async (contractAddress, userPercent, ownerAddress) => {
-  let tx = await tronWeb.transactionBuilder.updateSetting(contractAddress, userPercent, ownerAddress);
+const updateSetting = async (contractAddress, userPercent, ownerAddress, options) => {
+  let tx = await tronWeb.transactionBuilder.updateSetting(contractAddress, userPercent, ownerAddress, options);
   let signedTx = await tronWeb.trx.sign(tx, privateKey);
   let result = await tronWeb.trx.sendRawTransaction(signedTx);
-  if (result) {
+  if (result && result.transaction && result.transaction.txID) {
     let receipt = await waitTxReceipt(result.transaction.txID);
     // console.log("updateSetting receipt: %O", receipt);
     tool.showTxInfo(receipt, tronWeb.defaultAddress.hex);
