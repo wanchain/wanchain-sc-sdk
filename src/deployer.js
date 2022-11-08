@@ -259,6 +259,10 @@ const updateSetting = async (contractAddress, userPercent, ownerAddress, options
   throw new Error("failed to updateSetting contract " + contractAddress);
 }
 
+const getTronWeb = () => {
+  return tronWeb;
+}
+
 module.exports = {
   config,
   compile,
@@ -269,5 +273,6 @@ module.exports = {
   deployed,
   at,
   getTronAddrInfo,
-  updateSetting
+  updateSetting,
+  getTronWeb
 }
